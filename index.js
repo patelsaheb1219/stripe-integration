@@ -3,6 +3,7 @@ const bodyparser = require("body-parser");
 const dotenv = require("dotenv");
 const uuid = require("uuid").v4;
 const cors = require("cors");
+const path = require("path");
 const app = express();
 
 dotenv.config({ path: "./config/config.env" });
@@ -11,10 +12,10 @@ const stripe = require("stripe")(process.env.SECRET_KEY);
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(bodyparser.urlencoded({ extended: false }))
-app.use(bodyparser.json())
+app.use(bodyparser.urlencoded({ extended: false }));
+app.use(bodyparser.json());
 
-app.post('/checkout', async (req, res, next) => {
+app.post("/checkout", async (req, res, next) => {
   console.log("Request:", req.body);
 
   let error = null;
@@ -25,8 +26,8 @@ app.post('/checkout', async (req, res, next) => {
 
     const customer = await stripe.customers.create({
       email: token.email,
-      source: token.id
-    })
+      source: token.id,
+    });
 
     const key = uuid();
 
@@ -59,18 +60,19 @@ app.post('/checkout', async (req, res, next) => {
     status = "failure";
   }
   res.json({ error, status });
-})
+});
+
+app.use(express.static(path.join(__dirname, "client/build")));
 
 //Serve static assets if in production
 if (process.env.NODE_ENV === "production") {
   //Set static folder
-  app.use(express.static("client/build"));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
-  });
-}
+  app.use(express.static(path.join(__dirname, "client/build"))); 
+  app.get('*', (req, res) => {
+    res.send(path.join(__dirname = 'client/build/index.html'));
+  })
+};
 
 app.listen(PORT, () => {
   console.log(`Port is running on ${PORT}`);
-})
+});
